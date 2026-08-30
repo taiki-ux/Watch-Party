@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Together — watch, talk, chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0b0f1a;
+    --bg-panel:#131829;
+    --bg-panel-2:#1a2138;
+    --line:#262f4a;
+    --coral:#ff6f91;
+    --gold:#ffd166;
+    --teal:#5ee6d0;
+    --text:#f1eef7;
+    --text-muted:#8b93a8;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(255,111,145,0.10), transparent 60%),
+      radial-gradient(ellipse 800px 500px at 100% 0%, rgba(94,230,208,0.08), transparent 60%),
+      var(--bg-deep);
+    color:var(--text);
+    font-family:'Manrope',sans-serif;
+    min-height:100vh;
+  }
+  h1,h2,h3,.display{font-family:'Fraunces',serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  button{font-family:inherit;cursor:pointer;}
+  input{font-family:inherit;}
+
+  /* ---------- Landing ---------- */
+  #screen-landing{
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  .landing-card{
+    width:100%;max-width:460px;
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:36px 32px;
+    box-shadow:0 30px 80px -20px rgba(0,0,0,0.6);
+    position:relative;
+    overflow:hidden;
+  }
+  .landing-card::before{
+    content:"";
+    position:absolute; top:-60px; right:-60px;
+    width:200px;height:200px;border-radius:50%;
+    background:radial-gradient(circle, rgba(255,111,145,0.25), transparent 70%);
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-size:12px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--teal); font-weight:600; margin-bottom:6px;
+  }
+  .landing-card h1{
+    font-size:32px; font-weight:600; margin:0 0 6px;
+    font-style:italic;
+  }
+  .landing-card p.sub{ color:var(--text-muted); margin:0 0 28px; font-size:14.5px; line-height:1.5; }
+  label{display:block; font-size:12.5px; color:var(--text-muted); margin-bottom:6px; font-weight:600;}
+  .field{margin-bottom:18px;}
+  input[type=text]{
+    width:100%; padding:12px 14px; border-radius:10px;
+    border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text);
+    font-size:15px; outline:none; transition:border-color .15s;
+  }
+  input[type=text]:focus{border-color:var(--coral);}
+  .split{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:22px;}
+  @media (max-width:420px){ .split{grid-template-columns:1fr;} }
+  .option-box{
+    border:1px solid var(--line); border-radius:14px; padding:16px;
+    background:var(--bg-panel-2);
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .option-box h3{margin:0; font-size:15px; font-weight:600; font-style:normal;}
+  .btn{
+    border:none; border-radius:10px; padding:11px 16px;
+    font-weight:700; font-size:14px; letter-spacing:0.01em;
+    transition:transform .1s, filter .15s;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn:active{transform:scale(0.98);}
+  .btn-primary{background:linear-gradient(135deg, var(--coral), #ff9472); color:#1a0b10;}
+  .btn-secondary{background:var(--teal); color:#08201c;}
+  .btn-ghost{background:transparent; border:1px solid var(--line); color:var(--text);}
+  .btn-block{width:100%;}
+  .btn-sm{padding:8px 12px; font-size:12.5px;}
+  #landing-status{
+    margin-top:16px; font-size:13px; color:var(--text-muted); min-height:18px;
+  }
+  #landing-status.err{color:var(--coral);}
+
+  /* ---------- Room ---------- */
+  #screen-room{display:none; min-height:100vh; flex-direction:column;}
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 22px; border-bottom:1px solid var(--line);
+    background:rgba(19,24,41,0.7); backdrop-filter:blur(8px);
+    position:sticky; top:0; z-index:20;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-dot{width:10px;height:10px;border-radius:50%; background:var(--coral); box-shadow:0 0 12px var(--coral);}
+  .brand span{font-family:'Fraunces',serif; font-style:italic; font-size:18px;}
+  .roomcode-pill{
+    display:flex; align-items:center; gap:8px;
+    background:var(--bg-panel-2); border:1px solid var(--line);
+    padding:6px 6px 6px 12px; border-radius:999px; font-size:13px;
+  }
+  .roomcode-pill .code{color:var(--gold); letter-spacing:0.02em;}
+  .icon-btn{
+    background:var(--bg-panel); border:1px solid var(--line); color:var(--text-muted);
+    border-radius:999px; width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+    font-size:14px;
+  }
+  .icon-btn:hover{color:var(--text); border-color:var(--coral);}
+
+  .room-body{
+    flex:1; display:grid; grid-template-columns:1fr 340px; gap:0;
+    min-height:0;
+  }
+  @media (max-width:900px){ .room-body{grid-template-columns:1fr;} }
+
+  .video-col{padding:22px; display:flex; flex-direction:column; gap:14px; min-width:0;}
+  .video-frame{
+    position:relative; width:100%; aspect-ratio:16/9; background:#000;
+    border-radius:var(--radius); overflow:hidden; border:1px solid var(--line);
+    box-shadow:0 20px 50px -20px rgba(0,0,0,0.7);
+  }
+  .video-frame #yt-player{width:100%; height:100%;}
+  .video-frame:fullscreen{width:100vw; height:100vh; border-radius:0; aspect-ratio:auto; border:none;}
+  .video-frame:-webkit-full-screen{width:100vw; height:100vh; border-radius:0; border:none;}
+  .video-placeholder{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; color:var(--text-muted); text-align:center; padding:20px;
+  }
+  .video-placeholder .glow{
+    width:64px;height:64px;border-radius:50%;
+    background:radial-gradient(circle, rgba(255,209,102,0.25), transparent 70%);
+    display:flex; align-items:center; justify-content:center; font-size:26px;
+  }
+
+  .load-row{display:flex; gap:10px;}
+  .load-row input{flex:1;}
+
+  .controls-row{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px;
+  }
+  .seek-group{display:flex; align-items:center; gap:6px; margin-left:auto;}
+  .seek-group input[type=text]{width:70px; padding:8px 10px; text-align:center;}
+
+  /* Sidebar */
+  .side-col{
+    border-left:1px solid var(--line); display:flex; flex-direction:column; min-height:0;
+    background:rgba(19,24,41,0.4);
+  }
+  @media (max-width:900px){ .side-col{border-left:none; border-top:1px solid var(--line);} }
+
+  .constellation{
+    padding:18px 18px 16px; border-bottom:1px solid var(--line);
+  }
+  .constellation h4{margin:0 0 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:700; font-style:normal;}
+  .orbit{
+    position:relative; display:flex; gap:16px; flex-wrap:wrap; align-items:center;
+    padding-top:4px;
+  }
+  .avatar-wrap{display:flex; flex-direction:column; align-items:center; gap:6px; width:52px;}
+  .avatar{
+    width:44px; height:44px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:15px; color:#0b0f1a;
+    border:2px solid transparent;
+    position:relative;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .avatar.speaking{
+    border-color:var(--teal);
+    box-shadow:0 0 0 4px rgba(94,230,208,0.18);
+    animation:pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 3px rgba(94,230,208,0.18);}
+    50%{ box-shadow:0 0 0 7px rgba(94,230,208,0.10);}
+  }
+  .avatar .mic-badge{
+    position:absolute; bottom:-3px; right:-3px;
+    width:16px; height:16px; border-radius:50%;
+    background:var(--bg-panel); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:9px;
+  }
+  .avatar-name{font-size:10.5px; color:var(--text-muted); max-width:52px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  .mic-row{display:flex; gap:10px; margin-top:14px;}
+
+  .chat-col{flex:1; display:flex; flex-direction:column; min-height:0;}
+  .chat-log{
+    flex:1; overflow-y:auto; padding:16px 18px; display:flex; flex-direction:column; gap:10px;
+  }
+  .msg{max-width:100%;}
+  .msg .who{font-size:11.5px; font-weight:700; margin-bottom:2px;}
+  .msg .txt{font-size:14px; line-height:1.4; color:var(--text); word-wrap:break-word;}
+  .msg.system{font-size:12px; color:var(--text-muted); font-style:italic; text-align:center;}
+  .chat-input-row{
+    display:flex; gap:8px; padding:12px 14px; border-top:1px solid var(--line);
+  }
+  .chat-input-row input{flex:1;}
+  .chat-input-row button{padding:10px 16px;}
+
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
+
+  .hint{font-size:12px; color:var(--text-muted); line-height:1.5;}
+</style>
+</head>
+<body>
+
+<!-- ================= LANDING ================= -->
+<div id="screen-landing">
+  <div class="landing-card">
+    <div class="eyebrow">watch party</div>
+    <h1>Together</h1>
+    <p class="sub">Sync a YouTube video, talk over voice, and chat — with whoever's far away tonight.</p>
+
+    <div class="field">
+      <label>Your name</label>
+      <input type="text" id="input-name" placeholder="e.g. Ryu" maxlength="20">
+    </div>
+
+    <div class="split">
+      <div class="option-box">
+        <h3>🎬 Start a room</h3>
+        <p class="hint">You'll get a room code to share.</p>
+        <button class="btn btn-primary btn-block" id="btn-create">Create room</button>
+      </div>
+      <div class="option-box">
+        <h3>🔗 Join a room</h3>
+        <input type="text" id="input-roomcode" placeholder="room code">
+        <button class="btn btn-secondary btn-block" id="btn-join">Join room</button>
+      </div>
+    </div>
+
+    <div id="landing-status"></div>
+  </div>
+</div>
+
+<!-- ================= ROOM ================= -->
+<div id="screen-room">
+  <div class="topbar">
+    <div class="brand"><span class="brand-dot"></span><span>Together</span></div>
+    <div class="roomcode-pill">
+      <span>Room</span>
+      <span class="code mono" id="room-code-display">—</span>
+      <button class="icon-btn" id="btn-copy" title="Copy room code">⧉</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="btn-leave">Leave</button>
+  </div>
+
+  <div class="room-body">
+    <div class="video-col">
+      <div class="video-frame">
+        <div id="yt-player"></div>
+        <div class="video-placeholder" id="video-placeholder">
+          <div class="glow">▶</div>
+          <div>Paste a YouTube link below to start the night</div>
+        </div>
+      </div>
+
+      <div class="load-row">
+        <input type="text" id="input-video-url" placeholder="Paste a YouTube URL or video ID…">
+        <button class="btn btn-primary" id="btn-load">Load</button>
+      </div>
+
+      <div class="controls-row">
+        <button class="btn btn-ghost btn-sm" id="btn-play">▶ Play</button>
+        <button class="btn btn-ghost btn-sm" id="btn-pause">⏸ Pause</button>
+        <button class="btn btn-ghost btn-sm" id="btn-sync">🔄 Sync everyone to me</button>
+        <button class="btn btn-ghost btn-sm" id="btn-fullscreen">⛶ Full screen</button>
+        <div class="seek-group">
+          <span class="hint">Jump to</span>
+          <input type="text" id="input-seek" placeholder="1:23">
+          <button class="btn btn-ghost btn-sm" id="btn-seek">Go</button>
+        </div>
+      </div>
+      <p class="hint">Anyone can load or control the video — it syncs to the whole room automatically, correcting small drift every few seconds. If someone ever falls noticeably behind, hit "Sync everyone to me" for an instant snap.</p>
+    </div>
+
+    <div class="side-col">
+      <div class="constellation">
+        <h4 id="participant-count">In the room</h4>
+        <div class="orbit" id="orbit"></div>
+        <div class="mic-row">
+          <button class="btn btn-secondary btn-sm" id="btn-mic" style="flex:1;">🎤 Join voice</button>
+        </div>
+      </div>
+
+      <div class="chat-col">
+        <div class="chat-log" id="chat-log"></div>
+        <div class="chat-input-row">
+          <input type="text" id="input-chat" placeholder="Say something…" maxlength="500">
+          <button class="btn btn-primary" id="btn-send">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<script>
+/* ============================================================
+   TOGETHER — synced YouTube watch party w/ voice + text chat
+   Signaling & data/audio transport: PeerJS (public broker),
+   full-mesh between participants. No custom backend required.
+   ============================================================ */
+
+// ---------- Room code generator ----------
+const ADJ = ['amber','coral','cosmic','velvet','lunar','ember','misty','golden','quiet','wandering','hazy','soft'];
+const NOUN = ['otter','comet','harbor','ember','willow','falcon','tide','maple','nova','drift','ridge','lark'];
+function generateRoomCode(){
+  const a = ADJ[Math.floor(Math.random()*ADJ.length)];
+  const n = NOUN[Math.floor(Math.random()*NOUN.length)];
+  const num = Math.floor(Math.random()*90+10);
+  return `${a}-${n}-${num}`;
+}
+
+function nameColor(name){
+  let hash=0;
+  for(let i=0;i<name.length;i++){ hash = name.charCodeAt(i) + ((hash<<5)-hash); }
+  const hue = Math.abs(hash)%360;
+  return `hsl(${hue},70%,62%)`;
+}
+function initials(name){
+  return (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+}
+
+// ---------- State ----------
+let peer=null, myId=null, myName='', roomCode='', isHost=false;
+const dataConns = {};   // peerId -> DataConnection
+const mediaConns = {};  // peerId -> MediaConnection
+const audioEls = {};    // peerId -> <audio>
+let participants = {};  // peerId -> {name}
+let localStream = null;
+let micOn = false;
+let ytApiReady = false;
+let ytPlayer = null;
+let playerReady = false;
+let currentVideoId = null;
+let suppressEcho = false;
+
+// ---------- YouTube IFrame API ----------
+const tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(tag);
+window.onYouTubeIframeAPIReady = function(){ ytApiReady = true; };
+
+function extractVideoId(input){
+  input = input.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/
+  ];
+  for (const p of patterns){
+    const m = input.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function ensurePlayerAndLoad(videoId, startTime){
+  currentVideoId = videoId;
+  document.getElementById('video-placeholder').style.display = 'none';
+  if (!ytApiReady || typeof YT === 'undefined'){
+    setTimeout(()=>ensurePlayerAndLoad(videoId, startTime), 300);
+    return;
+  }
+  if (!ytPlayer){
+    ytPlayer = new YT.Player('yt-player', {
+      videoId: videoId,
+      playerVars: { rel:0, playsinline:1 },
+      events: {
+        onReady: ()=>{ playerReady = true; if (startTime) ytPlayer.seekTo(startTime,true); },
+        onStateChange: onPlayerStateChange
+      }
+    });
+  } else {
+    ytPlayer.loadVideoById(videoId, startTime||0);
+  }
+}
+
+function onPlayerStateChange(e){
+  if (suppressEcho || !window.YT) return;
+  if (e.data === YT.PlayerState.PLAYING){
+    broadcastVideo({action:'play', time: ytPlayer.getCurrentTime()});
+  } else if (e.data === YT.PlayerState.PAUSED){
+    broadcastVideo({action:'pause', time: ytPlayer.getCurrentTime()});
+  }
+}
+
+function broadcastVideo(payload){
+  payload.type='video';
+  payload.videoId = currentVideoId;
+  for (const id in dataConns) sendData(dataConns[id], payload);
+}
+
+function applyRemoteVideoCommand(data){
+  suppressEcho = true;
+  if (data.action === 'load'){
+    ensurePlayerAndLoad(data.videoId, data.time||0);
+  } else if (data.action === 'play'){
+    if (!ytPlayer) { ensurePlayerAndLoad(data.videoId, data.time||0); }
+    else { ytPlayer.seekTo(data.time,true); ytPlayer.playVideo(); }
+  } else if (data.action === 'pause'){
+    if (ytPlayer){ ytPlayer.seekTo(data.time,true); ytPlayer.pauseVideo(); }
+  } else if (data.action === 'sync'){
+    if (!ytPlayer){ ensurePlayerAndLoad(data.videoId, data.time||0); }
+    else {
+      ytPlayer.seekTo(data.time,true);
+      if (data.state === 'playing') ytPlayer.playVideo(); else ytPlayer.pauseVideo();
+    }
+  } else if (data.action === 'seek'){
+    if (ytPlayer) ytPlayer.seekTo(data.time,true);
+  } else if (data.action === 'heartbeat'){
+    if (ytPlayer && playerReady){
+      const localTime = ytPlayer.getCurrentTime();
+      const drift = Math.abs(localTime - data.time);
+      const localPlaying = ytPlayer.getPlayerState() === 1;
+      const remotePlaying = data.state === 'playing';
+      if (drift > 1.5){
+        ytPlayer.seekTo(data.time, true);
+      }
+      if (localPlaying !== remotePlaying){
+        remotePlaying ? ytPlayer.playVideo() : ytPlayer.pauseVideo();
+      }
+    } else {
+      suppressEcho = false;
+      return; // nothing loaded locally yet, ignore heartbeat
+    }
+  }
+  setTimeout(()=>{ suppressEcho=false; }, 900);
+}
+
+// Auto-sync: whoever is playing quietly broadcasts their position every few
+// seconds so latecomers/drifters snap back in line without anyone pressing a button.
+setInterval(()=>{
+  if (!ytPlayer || !playerReady || !currentVideoId) return;
+  const state = ytPlayer.getPlayerState();
+  if (state !== 1 && state !== 2) return; // only heartbeat while playing or paused
+  broadcastVideo({action:'heartbeat', time: ytPlayer.getCurrentTime(), state: state===1?'playing':'paused'});
+}, 5000);
+
+function parseTimeInput(str){
+  str = str.trim();
+  if (/^\d+$/.test(str)) return parseInt(str,10);
+  const parts = str.split(':').map(Number);
+  if (parts.some(isNaN)) return null;
+  let secs = 0;
+  for (const p of parts) secs = secs*60 + p;
+  return secs;
+}
+
+// ---------- PeerJS plumbing ----------
+function initPeer(customId){
+  peer = customId ? new Peer(customId, {debug:0}) : new Peer({debug:0});
+
+  peer.on('open', id=>{
+    myId = id;
+    participants[myId] = {name: myName};
+    showRoomScreen();
+    renderOrbit();
+    if (!isHost) connectToPeer(roomCode);
+  });
+
+  peer.on('connection', conn=>{ setupDataConn(conn); });
+
+  peer.on('call', call=>{
+    call.answer(localStream || undefined);
+    setupMediaConn(call);
+  });
+
+  peer.on('error', err=>{
+    console.error(err);
+    if (err.type === 'peer-unavailable'){
+      showLandingStatus("That room code doesn't seem to be active. Double check it with whoever's hosting.", true);
+    } else if (err.type === 'unavailable-id'){
+      // room code taken as host id — extremely unlikely collision, retry
+      showLandingStatus("That room just got taken — trying again…");
+      setTimeout(()=>initPeer(generateRoomCode()===roomCode?undefined:roomCode), 200);
+    }
+  });
+}
+
+function connectToPeer(targetId){
+  if (!targetId || targetId === myId || dataConns[targetId]) return;
+  const conn = peer.connect(targetId, {metadata:{name: myName}, reliable:true});
+  setupDataConn(conn);
+}
+
+function setupDataConn(conn){
+  conn.on('open', ()=>{
+    dataConns[conn.peer] = conn;
+    sendData(conn, {type:'hello', name: myName, id: myId});
+    if (currentVideoId){
+      sendData(conn, {type:'video', action:'sync', videoId: currentVideoId,
+        time: ytPlayer ? ytPlayer.getCurrentTime() : 0,
+        state: (ytPlayer && ytPlayer.getPlayerState()===1) ? 'playing':'paused'});
+    }
+    if (isHost) broadcastPeerList();
+    maybeCallPeer(conn.peer);
+  });
+  conn.on('data', data=> handleData(conn.peer, data));
+  conn.on('close', ()=> removePeer(conn.peer));
+}
+
+function setupMediaConn(call){
+  mediaConns[call.peer] = call;
+  call.on('stream', remoteStream=>{
+    let audioEl = audioEls[call.peer];
+    if (!audioEl){
+      audioEl = document.createElement('audio');
+      audioEl.autoplay = true;
+      document.body.appendChild(audioEl);
+      audioEls[call.peer] = audioEl;
+    }
+    audioEl.srcObject = remoteStream;
+    attachSpeakingDetector(remoteStream, call.peer);
+  });
+  call.on('close', ()=>{
+    if (audioEls[call.peer]){ audioEls[call.peer].remove(); delete audioEls[call.peer]; }
+    delete mediaConns[call.peer];
+  });
+}
+
+function maybeCallPeer(peerId){
+  if (!localStream) return;
+  if (mediaConns[peerId]) return;
+  const call = peer.call(peerId, localStream);
+  setupMediaConn(call);
+}
+
+function broadcastPeerList(){
+  const list = Object.entries(participants).map(([id,p])=>({id, name:p.name}));
+  for (const id in dataConns){
+    sendData(dataConns[id], {type:'peerlist', peers:list});
+  }
+}
+
+function sendData(conn, obj){
+  try{ if (conn.open) conn.send(obj); }catch(e){ console.warn(e); }
+}
+
+function handleData(fromId, data){
+  switch(data.type){
+    case 'hello':
+      participants[fromId] = {name:data.name};
+      addSystemMessage(`${data.name} joined the room`);
+      renderOrbit();
+      if (isHost) broadcastPeerList();
+      break;
+    case 'peerlist':
+      data.peers.forEach(p=>{
+        if (p.id !== myId && !participants[p.id]) participants[p.id] = {name:p.name};
+        if (p.id !== myId) connectToPeer(p.id);
+      });
+      renderOrbit();
+      break;
+    case 'chat':
+      addChatMessage(data.name, data.text, false);
+      break;
+    case 'video':
+      applyRemoteVideoCommand(data);
+      break;
+    case 'mic':
+      if (participants[fromId]) participants[fromId].muted = data.muted;
+      renderOrbit();
+      break;
+  }
+}
+
+function removePeer(peerId){
+  const name = participants[peerId]?.name || 'Someone';
+  delete dataConns[peerId];
+  if (mediaConns[peerId]){ mediaConns[peerId].close(); delete mediaConns[peerId]; }
+  if (audioEls[peerId]){ audioEls[peerId].remove(); delete audioEls[peerId]; }
+  if (participants[peerId]){ delete participants[peerId]; addSystemMessage(`${name} left the room`); }
+  renderOrbit();
+}
+
+// ---------- Speaking detection ----------
+const speakingState = {};
+function attachSpeakingDetector(stream, key){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const src = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    src.connect(analyser);
+    const buf = new Uint8Array(analyser.frequencyBinCount);
+    (function tick(){
+      analyser.getByteFrequencyData(buf);
+      let sum=0; for (let i=0;i<buf.length;i++) sum+=buf[i];
+      const avg = sum/buf.length;
+      const speaking = avg > 14;
+      if (speakingState[key] !== speaking){
+        speakingState[key] = speaking;
+        const el = document.querySelector(`.avatar[data-peer="${key}"]`);
+        if (el) el.classList.toggle('speaking', speaking);
+      }
+      requestAnimationFrame(tick);
+    })();
+  }catch(e){ console.warn('speaking detector failed', e); }
+}
+
+// ---------- UI: landing ----------
+const nameInput = document.getElementById('input-name');
+const roomInput = document.getElementById('input-roomcode');
+
+function showLandingStatus(msg, isErr){
+  const el = document.getElementById('landing-status');
+  el.textContent = msg;
+  el.classList.toggle('err', !!isErr);
+}
+
+document.getElementById('btn-create').addEventListener('click', ()=>{
+  myName = nameInput.value.trim();
+  if (!myName){ showLandingStatus('Enter your name first.', true); return; }
+  roomCode = generateRoomCode();
+  isHost = true;
+  showLandingStatus('Opening your room…');
+  initPeer(roomCode);
+});
+
+document.getElementById('btn-join').addEventListener('click', ()=>{
+  myName = nameInput.value.trim();
+  const code = roomInput.value.trim().toLowerCase();
+  if (!myName){ showLandingStatus('Enter your name first.', true); return; }
+  if (!code){ showLandingStatus('Enter the room code your friend sent you.', true); return; }
+  roomCode = code;
+  isHost = false;
+  showLandingStatus('Joining…');
+  initPeer();
+});
+
+// ---------- UI: room ----------
+function showRoomScreen(){
+  document.getElementById('screen-landing').style.display = 'none';
+  document.getElementById('screen-room').style.display = 'flex';
+  document.getElementById('room-code-display').textContent = roomCode;
+  addSystemMessage(isHost ? `Room created. Share the code "${roomCode}" with your friends.` : `You joined "${roomCode}".`);
+}
+
+document.getElementById('btn-copy').addEventListener('click', ()=>{
+  navigator.clipboard.writeText(roomCode).then(()=>{
+    const btn = document.getElementById('btn-copy');
+    const old = btn.textContent; btn.textContent='✓';
+    setTimeout(()=>btn.textContent=old, 1200);
+  });
+});
+
+document.getElementById('btn-leave').addEventListener('click', ()=>{
+  if (confirm('Leave the room?')) location.reload();
+});
+
+document.getElementById('btn-load').addEventListener('click', loadVideoFromInput);
+document.getElementById('input-video-url').addEventListener('keydown', e=>{ if(e.key==='Enter') loadVideoFromInput(); });
+function loadVideoFromInput(){
+  const raw = document.getElementById('input-video-url').value;
+  const id = extractVideoId(raw);
+  if (!id){ alert("Couldn't find a video in that link — paste a full YouTube URL or an 11-character video ID."); return; }
+  ensurePlayerAndLoad(id, 0);
+  broadcastVideo({action:'load', videoId:id, time:0});
+}
+
+document.getElementById('btn-play').addEventListener('click', ()=>{
+  if (!ytPlayer) return;
+  ytPlayer.playVideo();
+});
+document.getElementById('btn-pause').addEventListener('click', ()=>{
+  if (!ytPlayer) return;
+  ytPlayer.pauseVideo();
+});
+document.getElementById('btn-sync').addEventListener('click', ()=>{
+  if (!ytPlayer || !currentVideoId) return;
+  broadcastVideo({action:'sync', time: ytPlayer.getCurrentTime(), state: ytPlayer.getPlayerState()===1?'playing':'paused'});
+});
+document.getElementById('btn-fullscreen').addEventListener('click', ()=>{
+  const frame = document.querySelector('.video-frame');
+  if (document.fullscreenElement){
+    document.exitFullscreen();
+  } else if (frame.requestFullscreen){
+    frame.requestFullscreen();
+  } else if (frame.webkitRequestFullscreen){
+    frame.webkitRequestFullscreen();
+  }
+});
+
+document.getElementById('btn-seek').addEventListener('click', doSeek);
+document.getElementById('input-seek').addEventListener('keydown', e=>{ if(e.key==='Enter') doSeek(); });
+function doSeek(){
+  if (!ytPlayer) return;
+  const secs = parseTimeInput(document.getElementById('input-seek').value);
+  if (secs===null){ alert('Enter a time like 1:23 or a number of seconds.'); return; }
+  ytPlayer.seekTo(secs, true);
+  broadcastVideo({action:'seek', time:secs});
+}
+
+// Mic
+document.getElementById('btn-mic').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btn-mic');
+  if (!micOn){
+    try{
+      if (!localStream){
+        localStream = await navigator.mediaDevices.getUserMedia({audio:true});
+        attachSpeakingDetector(localStream, myId);
+      }
+      localStream.getAudioTracks().forEach(t=>t.enabled=true);
+      micOn = true;
+      btn.textContent = '🔇 Leave voice';
+      btn.classList.remove('btn-secondary'); btn.classList.add('btn-ghost');
+      for (const id in dataConns) maybeCallPeer(id);
+      for (const id in dataConns) sendData(dataConns[id], {type:'mic', muted:false});
+    }catch(e){
+      alert("Couldn't access your microphone. Check your browser's permission settings.");
+    }
+  } else {
+    micOn = false;
+    if (localStream) localStream.getAudioTracks().forEach(t=>t.enabled=false);
+    btn.textContent = '🎤 Join voice';
+    btn.classList.add('btn-secondary'); btn.classList.remove('btn-ghost');
+    for (const id in dataConns) sendData(dataConns[id], {type:'mic', muted:true});
+  }
+});
+
+// Chat
+document.getElementById('btn-send').addEventListener('click', sendChat);
+document.getElementById('input-chat').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
+function sendChat(){
+  const input = document.getElementById('input-chat');
+  const text = input.value.trim();
+  if (!text) return;
+  addChatMessage(myName, text, true);
+  for (const id in dataConns) sendData(dataConns[id], {type:'chat', name:myName, text});
+  input.value = '';
+}
+function addChatMessage(name, text, mine){
+  const log = document.getElementById('chat-log');
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `<div class="who" style="color:${mine?'var(--gold)':nameColor(name)}">${escapeHtml(name)}</div><div class="txt">${escapeHtml(text)}</div>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+function addSystemMessage(text){
+  const log = document.getElementById('chat-log');
+  const div = document.createElement('div');
+  div.className = 'msg system';
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+function escapeHtml(s){
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+
+// Orbit (participant avatars)
+function renderOrbit(){
+  const orbit = document.getElementById('orbit');
+  orbit.innerHTML = '';
+  const ids = Object.keys(participants);
+  document.getElementById('participant-count').textContent = `In the room · ${ids.length}`;
+  ids.forEach(id=>{
+    const p = participants[id];
+    const wrap = document.createElement('div');
+    wrap.className = 'avatar-wrap';
+    const av = document.createElement('div');
+    av.className = 'avatar';
+    av.dataset.peer = id;
+    av.style.background = nameColor(p.name || '?');
+    av.textContent = initials(p.name);
+    if (speakingState[id]) av.classList.add('speaking');
+    const badge = document.createElement('div');
+    badge.className = 'mic-badge';
+    badge.textContent = p.muted===false ? '🎤' : '·';
+    av.appendChild(badge);
+    const nm = document.createElement('div');
+    nm.className = 'avatar-name';
+    nm.textContent = (id===myId ? 'You' : p.name);
+    wrap.appendChild(av); wrap.appendChild(nm);
+    orbit.appendChild(wrap);
+  });
+}
+</script>
+</body>
+</html>
