@@ -138,7 +138,7 @@
     box-shadow:0 20px 50px -20px rgba(0,0,0,0.7);
   }
   .video-frame #yt-player{width:100%; height:100%;}
-  .video-frame:fullscreen{width:100vw; height:100vh; border-radius:0; aspect-ratio:9:16; border:none;}
+  .video-frame:fullscreen{width:100vw; height:100vh; border-radius:0; aspect-ratio:auto; border:none;}
   .video-frame:-webkit-full-screen{width:100vw; height:100vh; border-radius:0; border:none;}
   .video-placeholder{
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -324,14 +324,12 @@
    ============================================================ */
 
 // ---------- Room code generator ----------
-const ADJ = ['amber','coral','cosmic','velvet','lunar','ember','misty','golden','quiet','wandering','hazy','soft'];
-const NOUN = ['otter','comet','harbor','ember','willow','falcon','tide','maple','nova','drift','ridge','lark'];
 function generateRoomCode(){
-  const a = ADJ[Math.floor(Math.random()*ADJ.length)];
-  const n = NOUN[Math.floor(Math.random()*NOUN.length)];
-  const num = Math.floor(Math.random()*90+10);
-  return `${a}-${n}-${num}`;
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
 }
+
 
 function nameColor(name){
   let hash=0;
@@ -703,16 +701,29 @@ document.getElementById('btn-sync').addEventListener('click', ()=>{
   if (!ytPlayer || !currentVideoId) return;
   broadcastVideo({action:'sync', time: ytPlayer.getCurrentTime(), state: ytPlayer.getPlayerState()===1?'playing':'paused'});
 });
-document.getElementById('btn-fullscreen').addEventListener('click', ()=>{
+document.getElementById('btn-fullscreen').addEventListener('click', async ()=>{
   const frame = document.querySelector('.video-frame');
   if (document.fullscreenElement){
+    if (screen.orientation && screen.orientation.unlock) {
+      screen.orientation.unlock();
+    }
     document.exitFullscreen();
-  } else if (frame.requestFullscreen){
-    frame.requestFullscreen();
-  } else if (frame.webkitRequestFullscreen){
-    frame.webkitRequestFullscreen();
+  } else {
+    try {
+      if (frame.requestFullscreen) {
+        await frame.requestFullscreen();
+      } else if (frame.webkitRequestFullscreen) {
+        await frame.webkitRequestFullscreen();
+      }
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock('landscape').catch(() => {});
+      }
+    } catch(err) {
+      console.warn('Fullscreen/rotation error:', err);
+    }
   }
 });
+
 
 document.getElementById('btn-seek').addEventListener('click', doSeek);
 document.getElementById('input-seek').addEventListener('keydown', e=>{ if(e.key==='Enter') doSeek(); });
