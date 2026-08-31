@@ -344,7 +344,6 @@ function initials(name){
   return (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
 }
 
-<script>
   // ---------- State ----------
 let peer=null, myId=null, myName='', roomCode='', isHost=false; 
 
@@ -400,8 +399,7 @@ function initPeer(customId){
     renderOrbit();
     if (!isHost) connectToPeer(roomCode);
   });
-
-<script>
+  
 // ---------- YouTube IFrame API ----------
 const tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
@@ -520,6 +518,7 @@ function initPeer(customId){
   peer.on('open', id=>{
     myId = id;
     participants[myId] = {name: myName};
+    saveSession();
     showRoomScreen();
     renderOrbit();
     if (!isHost) connectToPeer(roomCode);
@@ -537,7 +536,6 @@ function initPeer(customId){
     if (err.type === 'peer-unavailable'){
       showLandingStatus("That room code doesn't seem to be active. Double check it with whoever's hosting.", true);
     } else if (err.type === 'unavailable-id'){
-      // room code taken as host id — extremely unlikely collision, retry
       showLandingStatus("That room just got taken — trying again…");
       setTimeout(()=>initPeer(generateRoomCode()===roomCode?undefined:roomCode), 200);
     }
