@@ -256,15 +256,15 @@
 
 <!-- ================= ROOM ================= -->
 <div id="screen-room">
-  <div class="topbar">
-    <div class="brand"><span class="brand-dot"></span><span>Together</span></div>
-    <div class="roomcode-pill">
-      <span>Room</span>
-      <span class="code mono" id="room-code-display">—</span>
-      <button class="icon-btn" id="btn-copy" title="Copy room code">⧉</button>
-    </div>
-    <button class="btn btn-ghost btn-sm" id="btn-leave">Leave</button>
+<div class="topbar">
+  <div class="brand"><span class="brand-dot"></span><span>Together</span></div>
+  <div class="roomcode-pill">
+    <span>Room</span>
+    <span class="code mono" id="room-code-display">—</span>
+    <button class="icon-btn" id="btn-copy" title="Copy room code">⧉</button>
   </div>
+</div>
+
 
   <div class="room-body">
     <div class="video-col">
@@ -304,13 +304,16 @@
         </div>
       </div>
 
-      <div class="chat-col">
-        <div class="chat-log" id="chat-log"></div>
-        <div class="chat-input-row">
-          <input type="text" id="input-chat" placeholder="Say something…" maxlength="500">
-          <button class="btn btn-primary" id="btn-send">Send</button>
-        </div>
-      </div>
+ <div class="chat-col">
+   <div class="chat-log" id="chat-log"></div>
+   <div class="chat-input-row">
+     <input type="text" id="input-chat" placeholder="Say something…" maxlength="500">
+     <button class="btn btn-primary" id="btn-send">Send</button>
+   </div>
+   <div style="padding: 10px 14px; border-top: 1px solid var(--line);">
+     <button class="btn btn-ghost btn-block btn-sm" id="btn-leave" style="color: var(--coral);">🚪 Leave Room</button>
+   </div>
+ </div>
     </div>
   </div>
 </div>
@@ -343,17 +346,47 @@ function initials(name){
 
 // ---------- State ----------
 let peer=null, myId=null, myName='', roomCode='', isHost=false;
-const dataConns = {};   // peerId -> DataConnection
-const mediaConns = {};  // peerId -> MediaConnection
-const audioEls = {};    // peerId -> <audio>
-let participants = {};  // peerId -> {name}
-let localStream = null;
-let micOn = false;
-let ytApiReady = false;
-let ytPlayer = null;
-let playerReady = false;
-let currentVideoId = null;
-let suppressEcho = false;
+
+// Check for existing session on page reload
+window.addEventListener('DOMContentLoaded', () => {
+  const savedRoom = sessionStorage.getItem('together_room');
+  const savedName = sessionStorage.getItem('together_name');
+  const savedHost = sessionStorage.getItem('together_ishost');
+
+  if (savedRoom && savedName) {
+    roomCode = savedRoom;
+    myName = savedName;
+    isHost = (savedHost === 'true');
+    showLandingStatus('Restoring your session…');
+    // If user was host, keep host room ID; otherwise connect as guest
+    initPeer(isHost ? roomCode : undefined);
+  }
+});
+
+function saveSession() {
+  sessionStorage.setItem('together_room', roomCode);
+  sessionStorage.setItem('together_name', myName);
+  sessionStorage.setItem('together_ishost', isHost);
+}
+
+function clearSession() {
+  sessionStorage.removeItem('together_room');
+  sessionStorage.removeItem('together_name');
+  sessionStorage.removeItem('together_ishost');
+}
+
+function initPeer(customId){
+  peer = customId ? new Peer(customId, {debug:0}) : new Peer({debug:0});
+
+  peer.on('open', id=>{
+    myId = id;
+    participants[myId] = {name: myName};
+    saveSession();
+    showRoomScreen();
+    renderOrbit();
+    if (!isHost) connectToPeer(roomCode);
+  });
+
 
 // ---------- YouTube IFrame API ----------
 const tag = document.createElement('script');
@@ -676,7 +709,11 @@ document.getElementById('btn-copy').addEventListener('click', ()=>{
 });
 
 document.getElementById('btn-leave').addEventListener('click', ()=>{
-  if (confirm('Leave the room?')) location.reload();
+  if (confirm('Leave the room?')){
+    clearSession();
+    if (peer) peer.destroy();
+    location.reload();
+  }
 });
 
 document.getElementById('btn-load').addEventListener('click', loadVideoFromInput);
