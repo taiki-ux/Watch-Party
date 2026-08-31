@@ -345,7 +345,20 @@ function initials(name){
 }
 
 // ---------- State ----------
-let peer=null, myId=null, myName='', roomCode='', isHost=false;
+let peer=null, myId=null, myName='', roomCode='', isHost=false; 
+
+  // Re-introduced state variables (restored after refactor)
+  const dataConns = {};   // peerId -> DataConnection
+  const mediaConns = {};  // peerId -> MediaConnection
+  const audioEls = {};    // peerId -> <audio>
+  let participants = {};  // peerId -> {name}
+  let localStream = null;
+  let micOn = false;
+  let ytApiReady = false;
+  let ytPlayer = null;
+  let playerReady = false;
+  let currentVideoId = null;
+  let suppressEcho = false;
 
 // Check for existing session on page reload
 window.addEventListener('DOMContentLoaded', () => {
