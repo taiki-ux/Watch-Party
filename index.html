@@ -344,7 +344,8 @@ function initials(name){
   return (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
 }
 
-// ---------- State ----------
+<script>
+  // ---------- State ----------
 let peer=null, myId=null, myName='', roomCode='', isHost=false; 
 
   // Re-introduced state variables (restored after refactor)
@@ -400,7 +401,7 @@ function initPeer(customId){
     if (!isHost) connectToPeer(roomCode);
   });
 
-
+<script>
 // ---------- YouTube IFrame API ----------
 const tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
